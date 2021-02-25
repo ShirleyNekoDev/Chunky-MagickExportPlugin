@@ -1,5 +1,7 @@
 package de.groovybyte.chunky.magickexportplugin.ui
 
+import de.groovybyte.chunky.magickexportplugin.MagickExportConfig
+import de.groovybyte.chunky.magickexportplugin.MagickExportConfig.persistentProperty
 import de.groovybyte.chunky.magickexportplugin.chunky.facade
 import de.groovybyte.chunky.magickexportplugin.magick.ExportFormat
 import de.groovybyte.chunky.magickexportplugin.magick.MagickExport
@@ -36,19 +38,33 @@ class MagickExportTab(
 
     override fun getTabContent(): Node = root
 
-    var exportFormat by property(EXRFormat)
     fun exportFormatProperty() = getProperty(MagickExportTab::exportFormat)
+    var exportFormat by persistentProperty(
+        "exportFormat",
+        EXRFormat,
+        ExportFormat.ExportFormatJsonConverter
+    )
 
-    var openAfterExport by property<Boolean>(true)
     fun openAfterExportProperty() = getProperty(MagickExportTab::openAfterExport)
+    var openAfterExport by persistentProperty("openAfterExport", true)
 
-    var currentlyExporting by property<Boolean>(false)
     fun currentlyExportingProperty() = getProperty(MagickExportTab::currentlyExporting)
+    var currentlyExporting by property(false)
 
     private val context: RenderContext get() = chunky.renderContext
     private val sceneManager: SceneManager get() = chunky.sceneManager
 
+    private fun onInitialized() {
+        MagickExportConfig.configChangedProperty.onChange {
+            if (it) {
+                runAsync { MagickExportConfig.save() }
+            }
+        }
+    }
+
     override val root = vbox {
+        sceneProperty().onChangeOnce { onInitialized() }
+
         spacing = 10.0
         paddingAll = 10.0
         useMaxWidth = true

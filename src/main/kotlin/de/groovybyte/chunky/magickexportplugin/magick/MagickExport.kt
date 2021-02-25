@@ -1,7 +1,11 @@
 package de.groovybyte.chunky.magickexportplugin.magick
 
+import de.groovybyte.chunky.magickexportplugin.MagickExportConfig.persisted
 import de.groovybyte.chunky.magickexportplugin.chunky.RGBPixelBuffer
+import de.groovybyte.chunky.magickexportplugin.utils.ChunkyJsonConverter
 import javafx.beans.property.SimpleObjectProperty
+import se.llbit.json.JsonString
+import se.llbit.json.JsonValue
 import tornadofx.*
 import java.io.DataOutputStream
 import java.io.File
@@ -12,7 +16,15 @@ import kotlin.error
  */
 object MagickExport {
 
-    val magickExecutableProperty = SimpleObjectProperty<File?>()
+    val magickExecutableProperty = SimpleObjectProperty<File?>().persisted(
+        "executableLocation",
+        object : ChunkyJsonConverter<File?> {
+            override fun fromJsonValue(value: JsonValue) =
+                value.asString(null)?.let { File(it) }
+
+            override fun toJsonValue(value: File?) =
+                value?.toString()?.let { JsonString(it) }
+        })
     var magickExecutable: File? by magickExecutableProperty
 
     /**
