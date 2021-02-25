@@ -1,0 +1,8 @@
+{
+  "name": "MagickExportPlugin",
+  "author": "ShirleyNekoDev",
+  "main": "de.groovybyte.chunky.magickexportplugin.MagickExportPlugin",
+  "version": "1.0",
+  "targetVersion": "2.4.0",
+  "description": "Export your renders via ImageMagick!"
+}
