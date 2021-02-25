@@ -81,6 +81,7 @@ class MagickExportTab(
                 }
             }
         }
+        label("Info: Postprocessing is currently not applied - you will get the raw data!")
 
         separator()
 
@@ -113,7 +114,7 @@ class MagickExportTab(
                     if (!isSupported(Desktop.Action.OPEN)) {
                         openAfterExport = false
                         isDisable = true
-                        println("\"Open after export\" not supported on this platform")
+                        Log.warn("\"Open after export\" not supported on this platform")
                         this@hbox.tooltip("Not supported on this platform")
                     }
                 }

@@ -6,6 +6,7 @@ import de.groovybyte.chunky.magickexportplugin.utils.ChunkyJsonConverter
 import javafx.beans.property.SimpleObjectProperty
 import se.llbit.json.JsonString
 import se.llbit.json.JsonValue
+import se.llbit.log.Log
 import tornadofx.*
 import java.io.DataOutputStream
 import java.io.File
@@ -38,6 +39,7 @@ object MagickExport {
         val file = targetFile.resolveSibling(
             "${targetFile.nameWithoutExtension}.${format.extension}"
         )
+        Log.info("Exporting to $file")
         Magick(
             listOf(
                 "convert",
@@ -55,6 +57,7 @@ object MagickExport {
         ).use {
             it.writeBuffer(buffer)
         }
+        Log.info("Export completed")
         return file
     }
 
@@ -66,13 +69,13 @@ object MagickExport {
                 prefix = "${magickExecutable ?: "magick"} ",
                 separator = " "
             )
-            println("Magick parameters: $params")
+            Log.info("Magick parameters: $params")
             process = ProcessBuilder(params.split(' ')).run {
                 redirectErrorStream(true)
                 redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                Log.info("Starting magick process (wish me luck)")
                 start()
             }
-            println("Started magick as pid=${process.pid()}")
             if (!process.isAlive) {
                 error("Magick process died")
             }
@@ -98,7 +101,7 @@ object MagickExport {
         }
 
         override fun close() {
-            println("Waiting for magick to finish")
+            Log.info("Waiting for magick to finish")
             process.waitFor()
         }
     }

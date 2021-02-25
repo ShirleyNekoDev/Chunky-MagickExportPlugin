@@ -28,7 +28,6 @@ object MagickExportConfig {
     fun save() {
         synchronized(MagickExportConfig) {
             if (configChanged) {
-                println("saving...")
                 PersistentSettings::class.java.getDeclaredMethod("save").apply {
                     isAccessible = true
                     invoke(null)
@@ -70,10 +69,8 @@ object MagickExportConfig {
         value = jsonizer.fromJsonValue(
             configRootObject.getOrCreate(configKey) { jsonizer.toJsonValue(value) }
         )
-        println("$configKey -> ${configRootObject.get(configKey)}")
         onChange {
             configRootObject.setOrRemove(configKey, it?.let(jsonizer::toJsonValue))
-            println("$configKey -> ${configRootObject.get(configKey)}")
             configChanged = true
         }
     }
