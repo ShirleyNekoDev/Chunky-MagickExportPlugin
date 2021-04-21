@@ -55,14 +55,14 @@ object MagickExportConfig {
         ChunkyJsonConverter.StringJsonConverter(initialValue)
     )
 
-    fun <T> persistentProperty(
+    fun <T : Any?> persistentProperty(
         configKey: String,
         initialValue: T,
         jsonizer: ChunkyJsonConverter<T>
     ) = property(initialValue)
         .apply { fxProperty.persisted(configKey, jsonizer) }
 
-    fun <T, P : Property<T>> P.persisted(
+    fun <T : Any?, P : Property<T>> P.persisted(
         configKey: String,
         jsonizer: ChunkyJsonConverter<T>
     ) = apply {

@@ -2,11 +2,13 @@ package de.groovybyte.chunky.magickexportplugin.ui
 
 import de.groovybyte.chunky.magickexportplugin.MagickExportConfig
 import de.groovybyte.chunky.magickexportplugin.MagickExportConfig.persistentProperty
-import de.groovybyte.chunky.magickexportplugin.chunky.facade
-import de.groovybyte.chunky.magickexportplugin.magick.ExportFormat
 import de.groovybyte.chunky.magickexportplugin.magick.MagickExport
-import de.groovybyte.chunky.magickexportplugin.magick.formats.EXRFormat
+import de.groovybyte.chunky.magickexportplugin.magick.MagickExportFormat
+import de.groovybyte.chunky.magickexportplugin.ui.chunkybindings.ChunkyAdvancedTabBinding
+import de.groovybyte.chunky.magickexportplugin.utils.longName
+import de.groovybyte.chunky.magickexportplugin.utils.shortName
 import de.groovybyte.chunky.magickexportplugin.utils.taskTracker
+import javafx.beans.binding.Bindings
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.ButtonType
@@ -20,11 +22,14 @@ import se.llbit.chunky.renderer.RenderContext
 import se.llbit.chunky.renderer.RenderMode
 import se.llbit.chunky.renderer.scene.Scene
 import se.llbit.chunky.renderer.scene.SceneManager
+import se.llbit.chunky.ui.RenderControlsFxController
 import se.llbit.chunky.ui.render.RenderControlsTab
 import se.llbit.log.Log
 import tornadofx.*
 import java.awt.Desktop
 import java.io.File
+import java.io.IOException
+import java.nio.ByteOrder
 import java.nio.file.Files
 
 /**
@@ -38,12 +43,10 @@ class MagickExportTab(
 
     override fun getTabContent(): Node = root
 
+    lateinit var advancedTabBinding: ChunkyAdvancedTabBinding
+
     fun exportFormatProperty() = getProperty(MagickExportTab::exportFormat)
-    var exportFormat by persistentProperty(
-        "exportFormat",
-        EXRFormat,
-        ExportFormat.ExportFormatJsonConverter
-    )
+    var exportFormat by property<MagickExportFormat?>()
 
     fun openAfterExportProperty() = getProperty(MagickExportTab::openAfterExport)
     var openAfterExport by persistentProperty("openAfterExport", true)
@@ -54,6 +57,19 @@ class MagickExportTab(
     private val context: RenderContext get() = chunky.renderContext
     private val sceneManager: SceneManager get() = chunky.sceneManager
 
+    //    private val canvasSizeProperty = SimpleStringProperty("0x0")
+    override fun setController(controller: RenderControlsFxController) {
+        runLater {
+//            sceneManager.scene?.run { "${width}x${height}" }.also { size ->
+//                canvasSizeProperty.set(size)
+//            }
+//            tryBindingCanvasSizeProperty(canvasSizeProperty, controller)
+            advancedTabBinding = ChunkyAdvancedTabBinding(controller).apply {
+                bindExportFormat(exportFormatProperty())
+            }
+        }
+    }
+
     private fun onInitialized() {
         MagickExportConfig.configChangedProperty.onChange {
             if (it) {
@@ -62,36 +78,24 @@ class MagickExportTab(
         }
     }
 
-    override val root = vbox {
+    override fun update(scene: Scene) {
+        // TODO: scene changed!
+    }
+
+    override val root = vbox(10.0) {
         sceneProperty().onChangeOnce { onInitialized() }
 
-        spacing = 10.0
         paddingAll = 10.0
         useMaxWidth = true
-
-        hbox(10.0, Pos.CENTER_LEFT) {
-            label("Format:")
-            choicebox(
-                exportFormatProperty(),
-                ExportFormat.REGISTRY.toList()
-            ) {
-                converter = object : StringConverter<ExportFormat>() {
-                    override fun toString(format: ExportFormat) = format.name
-                    override fun fromString(formatName: String) = ExportFormat[formatName]
-                }
-            }
-        }
-        label("Info: Postprocessing is currently not applied - you will get the raw data!")
-
-        separator()
 
         hbox(10.0, Pos.CENTER_LEFT) {
             label("Magick executable path:")
         }
         hbox(0.0, Pos.CENTER_LEFT) {
-            textfield(MagickExport.magickExecutableProperty.stringBinding {
-                it?.absolutePath ?: "magick (in PATH)"
-            }) {
+            textfield(
+                MagickExport.magickExecutablePathProperty
+                    .stringBinding { it ?: "magick (in PATH)" }
+            ) {
                 isEditable = false
                 onLeftClick { findMagickExecutable(currentWindow) }
                 hgrow = Priority.SOMETIMES
@@ -102,9 +106,13 @@ class MagickExportTab(
             }
         }
         button("Use magick in PATH") {
-            disableProperty().bind(MagickExport.magickExecutableProperty.isNull)
-            action { MagickExport.magickExecutable = null }
+            disableProperty().bind(MagickExport.magickExecutablePathProperty.isNull)
+            action { MagickExport.magickExecutablePath = null }
         }
+
+        separator()
+
+        label("Info: Postprocessing is currently not applied - you will get the raw data!")
 
         separator()
 
@@ -132,6 +140,91 @@ class MagickExportTab(
                 visibleWhen(currentlyExportingProperty())
             }
         }
+
+        titledpane("Expert Settings", collapsible = true) {
+            isAnimated = false
+            isExpanded = false
+
+            vbox(10.0) {
+
+                vbox(10.0, Pos.CENTER_LEFT) {
+                    label("Magick parameters")
+                    val parametersListObservable = Bindings.concat( // TODO
+                        MagickExport.magickExecutablePathProperty.stringBinding {
+                            it ?: "magick"
+                        },
+                        " convert",
+                        "\n -size WIDTHxHEIGHT",
+                        "\n -depth 64",
+                        "\n -define quantum:format=floating-point",
+                        "\n -define quantum:minimum=0.0",
+                        "\n -define quantum:maximum=1.0",
+                        "\n -colorspace RGB", //sRGB
+                        "\n -endian ",
+                        MagickExport.endiannessProperty.stringBinding { it!!.shortName },
+                        exportFormatProperty().stringBinding {
+                            it?.additionalMagickParameters?.let { list ->
+                                if (list.isNotEmpty()) {
+                                    list.joinToString(
+                                        separator = "\n ",
+                                        prefix = "\n "
+                                    )
+                                } else ""
+                            }
+                        },
+                        "\n RGB:-",
+                        "\n ",
+                        exportFormatProperty().stringBinding { it?.magickFormat },
+                        ":-"
+                    )
+                    textarea(
+                        Bindings.`when`(exportFormatProperty().isNotNull)
+                            .then(parametersListObservable)
+                            .otherwise(
+                                "Selected export format is not using Magick.\n" +
+                                "Use a magick output format to see its parameters."
+                            )
+                    ) {
+                        isEditable = false
+                        isWrapText = true
+                    }
+                }
+
+                separator()
+
+                label("Try to switch the settings here if the export looks weird")
+
+                hbox(10.0, Pos.CENTER_LEFT) {
+                    label("Endianness:")
+                    choicebox(
+                        MagickExport.endiannessProperty,
+                        listOf(ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN)
+                    ) {
+                        converter = object : StringConverter<ByteOrder>() {
+                            override fun toString(byteOrder: ByteOrder) =
+                                "${byteOrder.longName} (${byteOrder.shortName})"
+
+                            override fun fromString(formatName: String) = null
+                        }
+                    }
+                }
+
+                button("Reset to Defaults") {
+                    action {
+                        confirm(
+                            title = "Reset expert settings?",
+                            header = "Confirmation",
+                            content = "Do you really want to reset the expert settings to its defaults?",
+                            confirmButton = ButtonType.YES,
+                            cancelButton = ButtonType.CANCEL,
+                            owner = currentWindow,
+                        ) {
+                            MagickExport.expertSettingsResetGroup.resetAll()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun launchExport() {
@@ -140,20 +233,33 @@ class MagickExportTab(
             warning(
                 header = "Nothing to export",
                 content = "Cannot export the scene right now. Reasons might be:\n"
-                    + "- the scene is empty\n"
-                    + "- the scene was not rendered yet",
+                + "- the scene is empty\n"
+                + "- the scene was not rendered yet",
                 ButtonType.OK,
                 owner = currentWindow,
             )
+            Log.warn(
+                "Export not possible, reason: ${
+                    when {
+                        scene.chunks.isEmpty() -> "Chunks empty"
+                        scene.mode == RenderMode.PREVIEW -> "Preview mode"
+                        else -> "Spp = 0"
+                    }
+                }"
+            )
         } else {
             runAsync<File> {
-                sceneManager.taskTracker
-                    .task("Exporting using Magick", -1)
-                    .use {
-                        MagickExport.export(
-                            sceneManager.scene.facade.rgbPixelBuffer,
-                            context.getSceneFile(scene.name),
-                            exportFormat
+                context.getSceneFile(scene.name)
+                    .run {
+                        resolveSibling(
+                            "${nameWithoutExtension}${scene.outputMode.extension}"
+                        )
+                    }
+                    .apply {
+                        scene.outputMode.write(
+                            outputStream(),
+                            scene,
+                            sceneManager.taskTracker
                         )
                     }
             }.apply {
@@ -170,7 +276,11 @@ class MagickExportTab(
                 setOnSucceeded {
                     currentlyExporting = false
                     if (openAfterExport) {
-                        Desktop.getDesktop().open(value)
+                        try {
+                            Desktop.getDesktop().open(value)
+                        } catch (ex: IOException) {
+                            // TODO: alert: could not open file
+                        }
                     }
                 }
             }
@@ -192,9 +302,7 @@ class MagickExportTab(
             if (!Files.isExecutable(file.toPath())) {
                 kotlin.error("Selected file is not executable")
             }
-            MagickExport.magickExecutable = file
+            MagickExport.magickExecutablePath = file.absolutePath
         }
     }
-
-    override fun update(scene: Scene) {}
 }
