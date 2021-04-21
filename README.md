@@ -15,7 +15,7 @@ Export renderings to many new formats using ImageMagick or GraphicsMagick comman
 
 ## Installation
 
-1. Download the [newest version from the releases](./releases/latest) and put it in `.chunky/plugins/`
+1. Download the newest version from the releases and put it in `.chunky/plugins/`
 2. Start the Chunky launcher and ensure that you have the newest release installed (2.4-SNAPSHOT or higher)
 3. Enable MagickExportPlugin in the plugin manager
 4. Start chunky and check if Magick can be found
