@@ -1,10 +1,11 @@
 package de.groovybyte.chunky.magickexportplugin
 
+import de.groovybyte.chunky.magickexportplugin.magick.MagickExportFormat.*
 import de.groovybyte.chunky.magickexportplugin.ui.MagickExportTab
-import de.groovybyte.chunky.magickexportplugin.utils.isHeadless
 import se.llbit.chunky.Plugin
 import se.llbit.chunky.main.Chunky
 import se.llbit.chunky.main.ChunkyOptions
+import se.llbit.chunky.renderer.export.PictureExportFormats
 import se.llbit.chunky.ui.ChunkyFx
 import se.llbit.chunky.ui.render.RenderControlsTabTransformer
 import se.llbit.log.Log
@@ -18,12 +19,10 @@ class MagickExportPlugin : Plugin {
     }
 
     override fun attach(chunky: Chunky) {
-        if (chunky.isHeadless()) {
-            Log.warn("The $NAME currently does not support headless mode and will not be enabled.")
-            return
+        if (!chunky.isHeadless) {
+            registerFormats()
+            attachTabs(chunky)
         }
-
-        attachTabs(chunky)
     }
 
     private fun attachTabs(chunky: Chunky) {
@@ -33,6 +32,17 @@ class MagickExportPlugin : Plugin {
                 .apply(tabs)
                 .apply { add(MagickExportTab(chunky)) }
         }
+    }
+
+    private fun registerFormats() {
+        val newFormats = arrayOf(
+            EXR,
+            PFM,
+            PNG8,
+            PNG16
+        )
+        Log.info("$NAME introduces these new formats: ${newFormats.joinToString { it._name }}")
+        newFormats.forEach(PictureExportFormats::registerFormat)
     }
 }
 

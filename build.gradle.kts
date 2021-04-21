@@ -18,7 +18,9 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib", version = "1.4.30"))
 
-    implementation("se.llbit:chunky-core:2.4.0-SNAPSHOT")
+    implementation("se.llbit:chunky-core:2.4.0-SNAPSHOT") {
+        isChanging = true
+    }
 
     implementation("no.tornado:tornadofx:1.7.20")
 }
