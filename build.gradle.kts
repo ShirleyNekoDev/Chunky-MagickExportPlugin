@@ -1,12 +1,15 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.4.30"
+    kotlin("jvm") version "1.5.0-RC"
+    id("application")
+
+    id("com.github.ben-manes.versions") version "0.38.0"
     idea
 }
 
 group = "de.groovybyte.chunky"
-version = "1.0"
+version = "1.1"
 
 repositories {
     mavenLocal()
@@ -16,13 +19,19 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib", version = "1.4.30"))
+    val kotlinVersion = "1.5.0-RC"
+    implementation(kotlin("stdlib-jdk8", version = kotlinVersion))
 
     implementation("se.llbit:chunky-core:2.4.0-SNAPSHOT") {
         isChanging = true
     }
 
-    implementation("no.tornado:tornadofx:1.7.20")
+    implementation("no.tornado:tornadofx:1.7.20") {
+        constraints {
+            implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+        }
+    }
+    implementation("no.tornado:tornadofx-controlsfx:0.1.1")
 }
 
 tasks {
@@ -32,6 +41,7 @@ tasks {
     }
     withType<Jar> {
         archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         configurations["compileClasspath"].apply {
             files { dep ->
                 when {
@@ -47,7 +57,7 @@ tasks {
     withType<KotlinJvmCompile> {
         kotlinOptions {
             jvmTarget = "1.8"
-            languageVersion = "1.4"
+            languageVersion = "1.5"
             useIR = true
         }
     }
