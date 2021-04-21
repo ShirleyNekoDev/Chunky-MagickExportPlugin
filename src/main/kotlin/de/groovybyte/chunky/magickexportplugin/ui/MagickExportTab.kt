@@ -88,6 +88,10 @@ class MagickExportTab(
         paddingAll = 10.0
         useMaxWidth = true
 
+        text("Exporting using Magick does not apply postprocessing to minimize lossy operations on the raw data!")
+
+        separator()
+
         hbox(10.0, Pos.CENTER_LEFT) {
             label("Magick executable path:")
         }
@@ -112,34 +116,30 @@ class MagickExportTab(
 
         separator()
 
-        label("Info: Postprocessing is currently not applied - you will get the raw data!")
-
-        separator()
-
-        hbox(10.0, Pos.CENTER_LEFT) {
-            checkbox("Open after export", openAfterExportProperty()) {
-                Desktop.getDesktop().apply {
-                    if (!isSupported(Desktop.Action.OPEN)) {
-                        openAfterExport = false
-                        isDisable = true
-                        Log.warn("\"Open after export\" not supported on this platform")
-                        this@hbox.tooltip("Not supported on this platform")
-                    }
-                }
-            }
-        }
+//        hbox(10.0, Pos.CENTER_LEFT) {
+//            checkbox("Open after export", openAfterExportProperty()) {
+//                Desktop.getDesktop().apply {
+//                    if (!isSupported(Desktop.Action.OPEN)) {
+//                        openAfterExport = false
+//                        isDisable = true
+//                        Log.warn("\"Open after export\" not supported on this platform")
+//                        this@hbox.tooltip("Not supported on this platform")
+//                    }
+//                }
+//            }
+//        }
 
         // TODO: mount into renderer.setSnapshotControl
 
-        hbox(10.0, Pos.CENTER_LEFT) {
-            button("Export using Magick") {
-                action { launchExport() }
-                disableProperty().bind(currentlyExportingProperty())
-            }
-            progressindicator {
-                visibleWhen(currentlyExportingProperty())
-            }
-        }
+//        hbox(10.0, Pos.CENTER_LEFT) {
+//            button("Export using Magick") {
+//                action { launchExport() }
+//                disableProperty().bind(currentlyExportingProperty())
+//            }
+//            progressindicator {
+//                visibleWhen(currentlyExportingProperty())
+//            }
+//        }
 
         titledpane("Expert Settings", collapsible = true) {
             isAnimated = false
@@ -275,14 +275,17 @@ class MagickExportTab(
                 }
                 setOnSucceeded {
                     currentlyExporting = false
-                    if (openAfterExport) {
-                        try {
-                            Desktop.getDesktop().open(value)
-                        } catch (ex: IOException) {
-                            // TODO: alert: could not open file
-                        }
-                    }
                 }
+            }
+        }
+    }
+
+    private fun openExportedImage(file: File) {
+        if (openAfterExport) {
+            try {
+                Desktop.getDesktop().open(file)
+            } catch (ex: IOException) {
+                // TODO: alert: could not open file
             }
         }
     }
