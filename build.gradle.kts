@@ -31,7 +31,6 @@ dependencies {
             implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
         }
     }
-    implementation("no.tornado:tornadofx-controlsfx:0.1.1")
 }
 
 tasks {
