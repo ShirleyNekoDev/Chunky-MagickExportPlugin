@@ -1,10 +1,10 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.5.0-RC"
+    kotlin("jvm") version "1.5.30"
     id("application")
 
-    id("com.github.ben-manes.versions") version "0.38.0"
+    id("com.github.ben-manes.versions") version "0.39.0"
     idea
 }
 
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    val kotlinVersion = "1.5.0-RC"
+    val kotlinVersion = "1.5.30"
     implementation(kotlin("stdlib-jdk8", version = kotlinVersion))
 
     implementation("se.llbit:chunky-core:2.4.0-SNAPSHOT") {
@@ -57,7 +57,6 @@ tasks {
         kotlinOptions {
             jvmTarget = "1.8"
             languageVersion = "1.5"
-            useIR = true
         }
     }
 }
