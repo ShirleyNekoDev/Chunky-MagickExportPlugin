@@ -1,7 +1,7 @@
 package de.groovybyte.chunky.magickexportplugin.magick
 
 import de.groovybyte.chunky.magickexportplugin.MagickExportPlugin
-import de.groovybyte.chunky.magickexportplugin.chunky.facade
+import de.groovybyte.chunky.magickexportplugin.chunky.RGBPixelBuffer
 import se.llbit.chunky.renderer.export.PictureExportFormat
 import se.llbit.chunky.renderer.scene.Scene
 import se.llbit.util.TaskTracker
@@ -32,7 +32,7 @@ open class MagickExportFormat(
             .task("Exporting using Magick")
             .use {
                 MagickExport.export(
-                    scene.facade.rgbPixelBuffer,
+                    RGBPixelBuffer(scene.width, scene.height, scene.sampleBuffer),
                     outputStream,
                     this
                 )
