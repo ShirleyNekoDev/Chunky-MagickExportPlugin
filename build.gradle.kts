@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
-    kotlin("jvm") version "1.5.30"
-    id("application")
+    kotlin("jvm") version "1.6.0"
+    id("org.openjfx.javafxplugin") version "0.0.10"
 
     id("com.github.ben-manes.versions") version "0.39.0"
     idea
@@ -10,6 +10,7 @@ plugins {
 
 group = "de.groovybyte.chunky"
 version = "1.1"
+val chunkyVersion = "2.4.1"
 
 repositories {
     mavenLocal()
@@ -19,10 +20,10 @@ repositories {
 }
 
 dependencies {
-    val kotlinVersion = "1.5.30"
+    val kotlinVersion = "1.6.0"
     implementation(kotlin("stdlib-jdk8", version = kotlinVersion))
 
-    implementation("se.llbit:chunky-core:2.4.0-SNAPSHOT") {
+    implementation("se.llbit:chunky-core:$chunkyVersion") {
         isChanging = true
     }
 
@@ -33,11 +34,27 @@ dependencies {
     }
 }
 
+javafx {
+    version = "17"
+    modules = listOf("javafx.controls", "javafx.fxml")
+}
+
 tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+    processResources {
+        expand(
+            "version" to project.version,
+            "chunkyVersion" to chunkyVersion,
+        )
     }
+
+    withType<KotlinJvmCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+            apiVersion = "1.6"
+            languageVersion = "1.6"
+        }
+    }
+
     withType<Jar> {
         archiveFileName.set("${archiveBaseName.get()}.${archiveExtension.get()}")
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -45,18 +62,12 @@ tasks {
             files { dep ->
                 when {
                     dep.name.startsWith("chunky") -> false
+                    dep.name.startsWith("javafx") -> false
                     else -> true
                 }
             }.forEach { file ->
                 from(zipTree(file.absoluteFile))
             }
-        }
-    }
-
-    withType<KotlinJvmCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-            languageVersion = "1.5"
         }
     }
 }
